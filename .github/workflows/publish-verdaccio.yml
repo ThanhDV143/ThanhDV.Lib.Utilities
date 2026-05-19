@@ -1,4 +1,4 @@
-name: Publish to Verdaccio
+name: Publish ThanhDV.Newtonsoft.Json to Verdaccio
 
 # Triggered when a Git Tag matching v* is pushed
 on:
