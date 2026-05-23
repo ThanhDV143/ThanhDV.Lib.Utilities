@@ -26,7 +26,7 @@ namespace ThanhDV.Utilities
             }
         }
 
-        public static bool IsExist => _instance != null;
+        public static bool Exists => _instance != null;
     }
 
     /// <summary>
@@ -36,15 +36,20 @@ namespace ThanhDV.Utilities
     {
         private static T _instance;
         private static readonly object _lock = new object();
-        private static bool _applicationIsQuitting = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _instance = null;
+        }
 
         public static T Instance
         {
             get
             {
-                if (_applicationIsQuitting)
+                if (_instance == null && !ReferenceEquals(_instance, null))
                 {
-                    Debug.Log($"<color=yellow>[Singleton] Instance '{typeof(T)}' already destroyed on application quit. Won't create again - returning null.");
+                    Debug.Log($"<color=yellow>[Singleton] Instance '{typeof(T)}' already destroyed. Won't create again - returning null.</color>");
                     return null;
                 }
 
@@ -52,13 +57,12 @@ namespace ThanhDV.Utilities
                 {
                     if (_instance == null)
                     {
-                        _instance = FindFirstObjectByType(typeof(T)) as T;
+                        _instance = FindFirstObjectByType<T>();
 
                         if (_instance == null)
                         {
-                            GameObject singletonObject = new GameObject();
+                            GameObject singletonObject = new GameObject(typeof(T).Name);
                             _instance = singletonObject.AddComponent<T>();
-                            singletonObject.name = typeof(T).Name;
 
                             Debug.Log($"<color=yellow>[Singleton] {typeof(T).Name} instance created!</color>");
                         }
@@ -69,7 +73,7 @@ namespace ThanhDV.Utilities
             }
         }
 
-        public static bool IsExist => _instance != null;
+        public static bool Exists => _instance != null;
 
         protected virtual void Awake()
         {
@@ -79,21 +83,8 @@ namespace ThanhDV.Utilities
             }
             else if (_instance != this)
             {
-                Debug.Log($"<color=yellow>[Singleton] Another instance of {typeof(T)} detected! Destroying new one.");
+                Debug.Log($"<color=yellow>[Singleton] Another instance of {typeof(T)} detected! Destroying new one.</color>");
                 Destroy(gameObject);
-            }
-        }
-
-        protected virtual void OnApplicationQuit()
-        {
-            _applicationIsQuitting = true;
-        }
-
-        protected virtual void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _applicationIsQuitting = true;
             }
         }
     }
@@ -105,15 +96,20 @@ namespace ThanhDV.Utilities
     {
         private static T _instance;
         private static readonly object _lock = new object();
-        private static bool _applicationIsQuitting = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _instance = null;
+        }
 
         public static T Instance
         {
             get
             {
-                if (_applicationIsQuitting)
+                if (_instance == null && !ReferenceEquals(_instance, null))
                 {
-                    Debug.Log($"<color=yellow>[Singleton] Instance '{typeof(T)}' already destroyed on application quit. Won't create again - returning null.");
+                    Debug.Log($"<color=yellow>[Singleton] Instance '{typeof(T)}' already destroyed. Won't create again - returning null.</color>");
                     return null;
                 }
 
@@ -121,13 +117,12 @@ namespace ThanhDV.Utilities
                 {
                     if (_instance == null)
                     {
-                        _instance = FindFirstObjectByType(typeof(T)) as T;
+                        _instance = FindFirstObjectByType<T>();
 
                         if (_instance == null)
                         {
-                            GameObject singletonObject = new GameObject();
+                            GameObject singletonObject = new GameObject(typeof(T).Name);
                             _instance = singletonObject.AddComponent<T>();
-                            singletonObject.name = typeof(T).Name;
 
                             Debug.Log($"<color=yellow>[Singleton] {typeof(T).Name} instance created!</color>");
                         }
@@ -138,7 +133,7 @@ namespace ThanhDV.Utilities
             }
         }
 
-        public static bool IsExist => _instance != null;
+        public static bool Exists => _instance != null;
 
         protected virtual void Awake()
         {
@@ -149,21 +144,8 @@ namespace ThanhDV.Utilities
             }
             else if (_instance != this)
             {
-                Debug.Log($"<color=yellow>[Singleton] Another instance of {typeof(T)} detected! Destroying new one.");
+                Debug.Log($"<color=yellow>[Singleton] Another instance of {typeof(T)} detected! Destroying new one.</color>");
                 Destroy(gameObject);
-            }
-        }
-
-        protected virtual void OnApplicationQuit()
-        {
-            _applicationIsQuitting = true;
-        }
-
-        protected virtual void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _applicationIsQuitting = true;
             }
         }
     }
