@@ -1,4 +1,4 @@
-# Utilities
+# ThanhDV.Lib.Utilities
 This library contains some utilities for Unity development.
 This library contain:
 - Singleton
