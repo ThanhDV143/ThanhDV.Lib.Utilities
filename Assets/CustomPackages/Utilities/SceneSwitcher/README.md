@@ -1,21 +1,35 @@
 # SceneSwitcher
 
-Small Unity Editor utility that adds a scene dropdown to the right side of the main Toolbar. Switch scenes with one click. Two modes:
-* All Scenes: recursively scan a custom folder (default: `Assets/Games`).
-* Build Settings: only enabled scenes from Build Settings.
+Small Unity Editor utility that adds a scene dropdown to the right side of the main Toolbar. Switch scenes with one click.
+
+## Modes
+
+Cycle through them by clicking the source button on the toolbar:
+
+| Mode | What it lists |
+|---|---|
+| **All Scenes** | Every `*.unity` file under the configured folder (default `Assets`), scanned recursively. |
+| **Build Settings** | Only scenes enabled in `Build Settings`. |
+| **Addressables** | Every scene asset registered in any Addressables group. |
 
 ## How to use
 
-1. Keep `SceneSwitcher.cs` inside an `Editor` folder (already at `Assets/CustomPackages/Utilities/Editor/SceneSwitcher.cs`). It auto-initializes on domain load.
+1. Keep `SceneSwitcher.cs` inside the editor-only asmdef (`ThanhDV.Utilities.SceneSwitcher`). It auto-initializes on domain load.
 2. Toolbar UI shows:
-	 * Toggle button: All Scenes / Build Settings
-	 * (All Scenes mode) Text field for folder path
-	 * Scene popup
-3. (All Scenes) enter a valid folder path; list updates automatically. Pref key: `SceneSwitcher_CustomScenePath`.
-4. Pick a scene in the popup to open it. Unsaved changes trigger Unity’s save prompt.
+    * **Source button** — click to cycle: All Scenes → Build Settings → Addressables → ...
+    * **Scene popup** — pick a scene to open.
+3. (All Scenes mode) The scanned folder defaults to `Assets`. Pref key: `SceneSwitcher_CustomScenePath`.
+4. Picking a scene triggers Unity's save prompt if the current scene has unsaved changes.
 5. Controls are disabled while in Play Mode.
 
-Notes:
-* Auto-refreshes when scenes change, project refresh, or active scene changes.
-* Refresh only happens when the set differs (cheap comparison).
-* Remembers last folder and mode via EditorPrefs.
+## Notes
+
+* Auto-refreshes on scene change, project change, or active scene change (throttled to 1s).
+* Selected mode is remembered via EditorPrefs (`SceneSwitcher_SceneSource`, int 0–2).
+* Invalid stored values fall back to `All Scenes` on the next load.
+* Addressable scenes are opened with `EditorSceneManager.OpenScene(path)` — the same as regular scenes. The Addressables mode is for **filtering** the list, not for changing how scenes load in the editor.
+
+## Requirements
+
+* Unity 2022.3 or newer.
+* `com.unity.addressables` 1.0.0+ — only needed if you want the Addressables mode to actually list scenes; SceneSwitcher itself works without it.

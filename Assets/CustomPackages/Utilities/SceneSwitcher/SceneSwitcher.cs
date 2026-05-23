@@ -9,6 +9,10 @@ using UnityEditor.SceneManagement;
 #if UNITY_6000_3_OR_NEWER
 using UnityEditor.Toolbars;
 #endif
+#if SCENE_SWITCHER_ADDRESSABLES
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -40,11 +44,54 @@ namespace ThanhDV.Utilities
         private const string MAIN_TOOLBAR_PATH = "ThanhDV.Utilities/SceneSwitcher";
 #endif
 
-        private static bool FetchAllScenes
+        private enum SceneSource
         {
-            get => EditorPrefs.GetBool("SceneSwitcher_FetchAllScenes", true);
-            set => EditorPrefs.SetBool("SceneSwitcher_FetchAllScenes", value);
+            AllScenes = 0,
+            BuildSettings = 1,
+            Addressables = 2,
         }
+
+        private const string SCENE_SOURCE_PREF_KEY = "SceneSwitcher_SceneSource";
+        private const string ADDRESSABLES_MISSING_HINT = "Install com.unity.addressables";
+
+        // Addressables mode is always exposed in the cycle so users discover it exists
+        // and learn they need to install the package + add the SCENE_SWITCHER_ADDRESSABLES define.
+        private const int SourceCount = 3;
+
+        private static SceneSource Source
+        {
+            get
+            {
+                var raw = EditorPrefs.GetInt(SCENE_SOURCE_PREF_KEY, 0);
+                if (raw < 0 || raw >= SourceCount) raw = 0;
+                return (SceneSource)raw;
+            }
+            set => EditorPrefs.SetInt(SCENE_SOURCE_PREF_KEY, (int)value);
+        }
+
+        private static string GetSourceLabel(SceneSource source) => source switch
+        {
+            SceneSource.AllScenes => "All Scenes",
+            SceneSource.BuildSettings => "Build Settings",
+            SceneSource.Addressables => "Addressables",
+            _ => "All Scenes",
+        };
+
+        private static string GetEmptyListMessage()
+        {
+#if !SCENE_SWITCHER_ADDRESSABLES
+            if (Source == SceneSource.Addressables)
+                return ADDRESSABLES_MISSING_HINT;
+#endif
+            return "No Scenes";
+        }
+
+#if !SCENE_SWITCHER_ADDRESSABLES
+        private static void OpenAddressablesInPackageManager()
+        {
+            UnityEditor.PackageManager.UI.Window.Open("com.unity.addressables");
+        }
+#endif
 
         private static string CustomScenePath
         {
@@ -148,7 +195,7 @@ namespace ThanhDV.Utilities
 
             var isPlaying = EditorApplication.isPlaying;
             var toggleButton = new MainToolbarButton(
-                new MainToolbarContent(FetchAllScenes ? "All Scenes" : "Build Settings", "Toggle the scene source"),
+                new MainToolbarContent(GetSourceLabel(Source), "Cycle scene source"),
                 ToggleSceneSource)
             {
                 enabled = !isPlaying
@@ -167,8 +214,10 @@ namespace ThanhDV.Utilities
 
         private static void ToggleSceneSource()
         {
-            FetchAllScenes = !FetchAllScenes;
-            if (FetchAllScenes)
+            var next = ((int)Source + 1) % SourceCount;
+            Source = (SceneSource)next;
+
+            if (Source == SceneSource.AllScenes)
             {
                 CustomScenePath = DEFAULT_SCENE_PATH;
             }
@@ -176,43 +225,6 @@ namespace ThanhDV.Utilities
             MarkSceneListDirty();
             RefreshSceneListIfNeeded(force: true);
             RefreshToolbarUI();
-        }
-
-        private static string GetSelectedSceneDisplayName()
-        {
-            if (_sceneNames.Length == 0)
-                return "(No Scenes)";
-
-            if (_selectedIndex < 0 || _selectedIndex >= _sceneNames.Length)
-                SelectCurrentScene();
-
-            if (_selectedIndex < 0 || _selectedIndex >= _sceneNames.Length)
-                return _sceneNames[0];
-
-            return _sceneNames[_selectedIndex];
-        }
-
-        private static void ShowSceneDropdownMenu(Rect dropDownRect)
-        {
-            RefreshSceneListIfNeeded();
-
-            var menu = new GenericMenu();
-            if (_scenePaths.Length == 0)
-            {
-                menu.AddDisabledItem(new GUIContent("No Scenes"));
-                menu.DropDown(dropDownRect);
-                return;
-            }
-
-            for (var index = 0; index < _scenePaths.Length; index++)
-            {
-                var itemIndex = index;
-                var sceneName = _sceneNames[itemIndex];
-                var isSelected = itemIndex == _selectedIndex;
-                menu.AddItem(new GUIContent(sceneName), isSelected, () => LoadSceneAtIndex(itemIndex));
-            }
-
-            menu.DropDown(dropDownRect);
         }
 
         private static void RefreshToolbarUI()
@@ -238,40 +250,76 @@ namespace ThanhDV.Utilities
             GUILayout.BeginHorizontal();
 
             EditorGUI.BeginDisabledGroup(isPlaying);
-            var newFetchAllScenes = GUILayout.Toggle(FetchAllScenes, FetchAllScenes ? "All Scenes" : "Build Settings", "Button", GUILayout.Height(DROPDOWN_BOX_HEIGHT));
-            if (newFetchAllScenes != FetchAllScenes)
+            if (GUILayout.Button(GetSourceLabel(Source), "Button", GUILayout.Height(DROPDOWN_BOX_HEIGHT)))
             {
-                FetchAllScenes = newFetchAllScenes;
+                var next = ((int)Source + 1) % SourceCount;
+                Source = (SceneSource)next;
                 MarkSceneListDirty();
             }
 
-            if (FetchAllScenes)
+            if (Source == SceneSource.AllScenes)
             {
                 CustomScenePath = DEFAULT_SCENE_PATH;
             }
 
-            var popupStyle = new GUIStyle(EditorStyles.popup)
+            var label = new GUIContent(GetSelectedSceneDisplayName());
+            var popupStyle = new GUIStyle(EditorStyles.popup) { fixedHeight = DROPDOWN_BOX_HEIGHT };
+            var rect = GUILayoutUtility.GetRect(label, popupStyle, GUILayout.Width(150), GUILayout.Height(DROPDOWN_BOX_HEIGHT));
+            if (EditorGUI.DropdownButton(rect, label, FocusType.Keyboard, popupStyle))
             {
-                fixedHeight = DROPDOWN_BOX_HEIGHT
-            };
-
-            var displayNames = _sceneNames.Length == 0 ? new[] { "(No Scenes)" } : _sceneNames;
-            var newIndex = EditorGUILayout.Popup(_selectedIndex, displayNames, popupStyle, GUILayout.Width(150), GUILayout.Height(DROPDOWN_BOX_HEIGHT));
-
-            if (newIndex != _selectedIndex)
-            {
-                _selectedIndex = newIndex;
-
-                if (_sceneNames.Length > 0)
-                {
-                    LoadSceneAtIndex(_selectedIndex);
-                }
+                ShowSceneDropdownMenu(rect);
             }
             EditorGUI.EndDisabledGroup();
 
             GUILayout.EndHorizontal();
         }
 #endif
+
+        private static string GetSelectedSceneDisplayName()
+        {
+            if (_sceneNames.Length == 0)
+                return GetEmptyListMessage();
+
+            if (_selectedIndex < 0 || _selectedIndex >= _sceneNames.Length)
+                SelectCurrentScene();
+
+            if (_selectedIndex < 0 || _selectedIndex >= _sceneNames.Length)
+                return _sceneNames[0];
+
+            return _sceneNames[_selectedIndex];
+        }
+
+        private static void ShowSceneDropdownMenu(Rect dropDownRect)
+        {
+            RefreshSceneListIfNeeded();
+
+            var menu = new GenericMenu();
+            if (_scenePaths.Length == 0)
+            {
+#if !SCENE_SWITCHER_ADDRESSABLES
+                if (Source == SceneSource.Addressables)
+                {
+                    menu.AddItem(new GUIContent(ADDRESSABLES_MISSING_HINT), false, OpenAddressablesInPackageManager);
+                }
+                else
+#endif
+                {
+                    menu.AddDisabledItem(new GUIContent(GetEmptyListMessage()));
+                }
+                menu.DropDown(dropDownRect);
+                return;
+            }
+
+            for (var index = 0; index < _scenePaths.Length; index++)
+            {
+                var itemIndex = index;
+                var sceneName = _sceneNames[itemIndex];
+                var isSelected = itemIndex == _selectedIndex;
+                menu.AddItem(new GUIContent(sceneName), isSelected, () => LoadSceneAtIndex(itemIndex));
+            }
+
+            menu.DropDown(dropDownRect);
+        }
 
         private static void RefreshSceneListIfNeeded(bool force = false)
         {
@@ -290,28 +338,74 @@ namespace ThanhDV.Utilities
 
         private static void BuildSceneList(out string[] sceneNames, out string[] scenePaths)
         {
-            if (FetchAllScenes)
+            switch (Source)
             {
-                string path = CustomScenePath;
-                if (Directory.Exists(path))
-                {
-                    var paths = Directory.GetFiles(path, "*.unity", SearchOption.AllDirectories);
-                    scenePaths = paths;
-                    sceneNames = paths.Select(Path.GetFileNameWithoutExtension).ToArray();
-                }
-                else
-                {
-                    sceneNames = Array.Empty<string>();
-                    scenePaths = Array.Empty<string>();
-                }
-            }
-            else
-            {
-                var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).ToArray();
-                scenePaths = scenes.Select(scene => scene.path).ToArray();
-                sceneNames = scenePaths.Select(Path.GetFileNameWithoutExtension).ToArray();
+                case SceneSource.BuildSettings:
+                    {
+                        var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).ToArray();
+                        scenePaths = scenes.Select(scene => scene.path).ToArray();
+                        sceneNames = scenePaths.Select(Path.GetFileNameWithoutExtension).ToArray();
+                        return;
+                    }
+                case SceneSource.Addressables:
+                    {
+#if SCENE_SWITCHER_ADDRESSABLES
+                        BuildAddressableSceneList(out sceneNames, out scenePaths);
+#else
+                        sceneNames = Array.Empty<string>();
+                        scenePaths = Array.Empty<string>();
+#endif
+                        return;
+                    }
+                case SceneSource.AllScenes:
+                default:
+                    {
+                        string path = CustomScenePath;
+                        if (Directory.Exists(path))
+                        {
+                            var paths = Directory.GetFiles(path, "*.unity", SearchOption.AllDirectories);
+                            scenePaths = paths;
+                            sceneNames = paths.Select(Path.GetFileNameWithoutExtension).ToArray();
+                        }
+                        else
+                        {
+                            sceneNames = Array.Empty<string>();
+                            scenePaths = Array.Empty<string>();
+                        }
+                        return;
+                    }
             }
         }
+
+#if SCENE_SWITCHER_ADDRESSABLES
+        private static void BuildAddressableSceneList(out string[] sceneNames, out string[] scenePaths)
+        {
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                sceneNames = Array.Empty<string>();
+                scenePaths = Array.Empty<string>();
+                return;
+            }
+
+            var paths = new List<string>();
+            foreach (var group in settings.groups)
+            {
+                if (group == null) continue;
+                foreach (var entry in group.entries)
+                {
+                    if (entry == null) continue;
+                    if (entry.MainAssetType == typeof(SceneAsset))
+                    {
+                        paths.Add(entry.AssetPath);
+                    }
+                }
+            }
+
+            scenePaths = paths.ToArray();
+            sceneNames = scenePaths.Select(Path.GetFileNameWithoutExtension).ToArray();
+        }
+#endif
 
         private static void SelectCurrentScene()
         {
