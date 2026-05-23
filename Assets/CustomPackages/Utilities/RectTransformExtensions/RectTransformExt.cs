@@ -13,9 +13,8 @@ namespace ThanhDV.Utilities
         MiddleRight,
 
         BottomLeft,
-        BottonCenter,
+        BottomCenter,
         BottomRight,
-        BottomStretch,
 
         VertStretchLeft,
         VertStretchRight,
@@ -45,11 +44,30 @@ namespace ThanhDV.Utilities
 
     public static class RectTransformExt
     {
-        public static void SetAnchor(this RectTransform source, AnchorPresets allign, int offsetX = 0, int offsetY = 0)
+        /// <summary>
+        /// Sets the anchor of a <see cref="RectTransform"/> using a preset.
+        /// </summary>
+        /// <param name="source">The RectTransform to modify.</param>
+        /// <param name="align">The anchor preset to apply.</param>
+        /// <param name="offsetX">
+        /// Optional new <c>anchoredPosition.x</c>. When <c>null</c> (default), the current
+        /// anchoredPosition.x is preserved.
+        /// </param>
+        /// <param name="offsetY">
+        /// Optional new <c>anchoredPosition.y</c>. When <c>null</c> (default), the current
+        /// anchoredPosition.y is preserved.
+        /// </param>
+        public static void SetAnchor(this RectTransform source, AnchorPresets align, int? offsetX = null, int? offsetY = null)
         {
-            source.anchoredPosition = new Vector3(offsetX, offsetY, 0);
+            if (offsetX.HasValue || offsetY.HasValue)
+            {
+                Vector2 current = source.anchoredPosition;
+                source.anchoredPosition = new Vector2(
+                    offsetX ?? current.x,
+                    offsetY ?? current.y);
+            }
 
-            switch (allign)
+            switch (align)
             {
                 case AnchorPresets.TopLeft:
                     {
@@ -95,7 +113,7 @@ namespace ThanhDV.Utilities
                         source.anchorMax = new Vector2(0, 0);
                         break;
                     }
-                case AnchorPresets.BottonCenter:
+                case AnchorPresets.BottomCenter:
                     {
                         source.anchorMin = new Vector2(0.5f, 0);
                         source.anchorMax = new Vector2(0.5f, 0);
@@ -155,6 +173,9 @@ namespace ThanhDV.Utilities
             }
         }
 
+        /// <summary>
+        /// Sets the pivot of a <see cref="RectTransform"/> using a preset.
+        /// </summary>
         public static void SetPivot(this RectTransform source, PivotPresets preset)
         {
 

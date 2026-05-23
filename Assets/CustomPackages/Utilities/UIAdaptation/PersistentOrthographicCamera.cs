@@ -1,13 +1,19 @@
 using UnityEngine;
 
-namespace ThanhDV.Utilities.UIAdaptation
+namespace ThanhDV.Utilities
 {
     public class PersistentOrthographicCamera : MonoBehaviour
     {
         [Space]
         [SerializeField] private bool activateOnAwake = true;
+        [SerializeField] private bool autoReadapt = false;
         [SerializeField] private Camera mainCamera;
-        [SerializeField] private Vector2 referenceResolution = new Vector2(1080, 1920);
+        [SerializeField] private Vector2 referenceResolution = new(1080, 1920);
+
+        private float _baseOrthographicSize = -1f;
+
+        private int _lastScreenWidth;
+        private int _lastScreenHeight;
 
         private void Awake()
         {
@@ -15,6 +21,13 @@ namespace ThanhDV.Utilities.UIAdaptation
             {
                 ResizeCamera(out _);
             }
+        }
+
+        private void Update()
+        {
+            if (!autoReadapt) return;
+            if (_lastScreenWidth == Screen.width && _lastScreenHeight == Screen.height) return;
+            ResizeCamera(out _);
         }
 
         public void ResizeCamera(out float _orthographicSize)
@@ -32,6 +45,12 @@ namespace ThanhDV.Utilities.UIAdaptation
                 return;
             }
 
+            // Lazy-cache the baseline so repeated calls compute from the same anchor.
+            if (_baseOrthographicSize < 0f)
+            {
+                _baseOrthographicSize = mainCamera.orthographicSize;
+            }
+
             float screenWidth = Screen.width;
             float screenHeight = Screen.height;
 
@@ -40,15 +59,17 @@ namespace ThanhDV.Utilities.UIAdaptation
 
             if (screenRatio < referenceRatio)
             {
-                float baseHorizontalSize = mainCamera.orthographicSize * referenceResolution.x / referenceResolution.y;
+                float baseHorizontalSize = _baseOrthographicSize * referenceResolution.x / referenceResolution.y;
                 _orthographicSize = baseHorizontalSize * screenHeight / screenWidth;
             }
             else
             {
-                _orthographicSize = mainCamera.orthographicSize;
+                _orthographicSize = _baseOrthographicSize;
             }
 
             mainCamera.orthographicSize = _orthographicSize;
+            _lastScreenWidth = (int)screenWidth;
+            _lastScreenHeight = (int)screenHeight;
         }
     }
 }

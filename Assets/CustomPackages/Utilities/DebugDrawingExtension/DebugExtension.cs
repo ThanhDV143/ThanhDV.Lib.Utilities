@@ -10,6 +10,44 @@ using System.Reflection;
 
 namespace ThanhDV.Utilities
 {
+	/// <summary>
+	/// Eight corners of an axis-aligned bounding box. Field naming follows the
+	/// "rub" = right-up-back convention used throughout this file:
+	/// r/l = +x/-x, u/d = +y/-y, f/b = +z/-z.
+	/// </summary>
+	internal struct BoundsCorners
+	{
+		public Vector3 ruf, rub, luf, lub;
+		public Vector3 rdf, rdb, lfd, lbd;
+	}
+
+	internal static class DebugShapeMath
+	{
+		/// <summary>
+		/// Computes the 8 world-space corners of a <see cref="Bounds"/>.
+		/// Pure math — no side effects, no drawing.
+		/// </summary>
+		public static BoundsCorners GetBoundsCorners(Bounds bounds)
+		{
+			Vector3 center = bounds.center;
+			float x = bounds.extents.x;
+			float y = bounds.extents.y;
+			float z = bounds.extents.z;
+
+			return new BoundsCorners
+			{
+				ruf = center + new Vector3(x, y, z),
+				rub = center + new Vector3(x, y, -z),
+				luf = center + new Vector3(-x, y, z),
+				lub = center + new Vector3(-x, y, -z),
+				rdf = center + new Vector3(x, -y, z),
+				rdb = center + new Vector3(x, -y, -z),
+				lfd = center + new Vector3(-x, -y, z),
+				lbd = center + new Vector3(-x, -y, -z),
+			};
+		}
+	}
+
 	public static class DebugExt
 	{
 		/// <summary>
@@ -79,36 +117,22 @@ namespace ThanhDV.Utilities
 		public static void DrawBounds(Bounds bounds, Color color, float duration = 0, bool depthTest = true)
 		{
 #if UNITY_EDITOR
-			Vector3 center = bounds.center;
+			var c = DebugShapeMath.GetBoundsCorners(bounds);
 
-			float x = bounds.extents.x;
-			float y = bounds.extents.y;
-			float z = bounds.extents.z;
+			Debug.DrawLine(c.ruf, c.luf, color, duration, depthTest);
+			Debug.DrawLine(c.ruf, c.rub, color, duration, depthTest);
+			Debug.DrawLine(c.luf, c.lub, color, duration, depthTest);
+			Debug.DrawLine(c.rub, c.lub, color, duration, depthTest);
 
-			Vector3 ruf = center + new Vector3(x, y, z);
-			Vector3 rub = center + new Vector3(x, y, -z);
-			Vector3 luf = center + new Vector3(-x, y, z);
-			Vector3 lub = center + new Vector3(-x, y, -z);
+			Debug.DrawLine(c.ruf, c.rdf, color, duration, depthTest);
+			Debug.DrawLine(c.rub, c.rdb, color, duration, depthTest);
+			Debug.DrawLine(c.luf, c.lfd, color, duration, depthTest);
+			Debug.DrawLine(c.lub, c.lbd, color, duration, depthTest);
 
-			Vector3 rdf = center + new Vector3(x, -y, z);
-			Vector3 rdb = center + new Vector3(x, -y, -z);
-			Vector3 lfd = center + new Vector3(-x, -y, z);
-			Vector3 lbd = center + new Vector3(-x, -y, -z);
-
-			Debug.DrawLine(ruf, luf, color, duration, depthTest);
-			Debug.DrawLine(ruf, rub, color, duration, depthTest);
-			Debug.DrawLine(luf, lub, color, duration, depthTest);
-			Debug.DrawLine(rub, lub, color, duration, depthTest);
-
-			Debug.DrawLine(ruf, rdf, color, duration, depthTest);
-			Debug.DrawLine(rub, rdb, color, duration, depthTest);
-			Debug.DrawLine(luf, lfd, color, duration, depthTest);
-			Debug.DrawLine(lub, lbd, color, duration, depthTest);
-
-			Debug.DrawLine(rdf, lfd, color, duration, depthTest);
-			Debug.DrawLine(rdf, rdb, color, duration, depthTest);
-			Debug.DrawLine(lfd, lbd, color, duration, depthTest);
-			Debug.DrawLine(lbd, rdb, color, duration, depthTest);
+			Debug.DrawLine(c.rdf, c.lfd, color, duration, depthTest);
+			Debug.DrawLine(c.rdf, c.rdb, color, duration, depthTest);
+			Debug.DrawLine(c.lfd, c.lbd, color, duration, depthTest);
+			Debug.DrawLine(c.lbd, c.rdb, color, duration, depthTest);
 #endif
 		}
 
@@ -590,7 +614,9 @@ namespace ThanhDV.Utilities
 			var farPlane = new Plane(-direction, position + _forward);
 			var distRay = new Ray(position, slerpedVector);
 
-			farPlane.Raycast(distRay, out dist);
+			// Bail out if the ray doesn't hit the far plane (ray parallel to plane / degenerate cone).
+			// Otherwise `dist` stays at 0 and we'd draw zero-length rays + a zero-radius circle.
+			if (!farPlane.Raycast(distRay, out dist)) return;
 
 			Debug.DrawRay(position, slerpedVector.normalized * dist, color);
 			Debug.DrawRay(position, Vector3.Slerp(_forward, -_up, angle / 90.0f).normalized * dist, color, duration, depthTest);
@@ -856,39 +882,25 @@ namespace ThanhDV.Utilities
 		public static void DrawBounds(Bounds bounds, Color color)
 		{
 #if UNITY_EDITOR
-			Vector3 center = bounds.center;
-
-			float x = bounds.extents.x;
-			float y = bounds.extents.y;
-			float z = bounds.extents.z;
-
-			Vector3 ruf = center + new Vector3(x, y, z);
-			Vector3 rub = center + new Vector3(x, y, -z);
-			Vector3 luf = center + new Vector3(-x, y, z);
-			Vector3 lub = center + new Vector3(-x, y, -z);
-
-			Vector3 rdf = center + new Vector3(x, -y, z);
-			Vector3 rdb = center + new Vector3(x, -y, -z);
-			Vector3 lfd = center + new Vector3(-x, -y, z);
-			Vector3 lbd = center + new Vector3(-x, -y, -z);
+			var c = DebugShapeMath.GetBoundsCorners(bounds);
 
 			Color oldColor = Gizmos.color;
 			Gizmos.color = color;
 
-			Gizmos.DrawLine(ruf, luf);
-			Gizmos.DrawLine(ruf, rub);
-			Gizmos.DrawLine(luf, lub);
-			Gizmos.DrawLine(rub, lub);
+			Gizmos.DrawLine(c.ruf, c.luf);
+			Gizmos.DrawLine(c.ruf, c.rub);
+			Gizmos.DrawLine(c.luf, c.lub);
+			Gizmos.DrawLine(c.rub, c.lub);
 
-			Gizmos.DrawLine(ruf, rdf);
-			Gizmos.DrawLine(rub, rdb);
-			Gizmos.DrawLine(luf, lfd);
-			Gizmos.DrawLine(lub, lbd);
+			Gizmos.DrawLine(c.ruf, c.rdf);
+			Gizmos.DrawLine(c.rub, c.rdb);
+			Gizmos.DrawLine(c.luf, c.lfd);
+			Gizmos.DrawLine(c.lub, c.lbd);
 
-			Gizmos.DrawLine(rdf, lfd);
-			Gizmos.DrawLine(rdf, rdb);
-			Gizmos.DrawLine(lfd, lbd);
-			Gizmos.DrawLine(lbd, rdb);
+			Gizmos.DrawLine(c.rdf, c.lfd);
+			Gizmos.DrawLine(c.rdf, c.rdb);
+			Gizmos.DrawLine(c.lfd, c.lbd);
+			Gizmos.DrawLine(c.lbd, c.rdb);
 
 			Gizmos.color = oldColor;
 #endif
@@ -1132,7 +1144,7 @@ namespace ThanhDV.Utilities
 		/// </param>
 		public static void DrawCircle(Vector3 position, Vector3 up, float radius = 1.0f)
 		{
-			DrawCircle(position, position, Color.white, radius);
+			DrawCircle(position, up, Color.white, radius);
 		}
 
 		/// <summary>
@@ -1174,9 +1186,9 @@ namespace ThanhDV.Utilities
 			Vector3 right = Vector3.Cross(up, forward).normalized * radius;
 
 			//Radial circles
-			DebugExt.DrawCircle(start, up, color, radius);
-			DebugExt.DrawCircle(end, -up, color, radius);
-			DebugExt.DrawCircle((start + end) * 0.5f, up, color, radius);
+			DrawCircle(start, up, color, radius);
+			DrawCircle(end, -up, color, radius);
+			DrawCircle((start + end) * 0.5f, up, color, radius);
 
 			Color oldColor = Gizmos.color;
 			Gizmos.color = color;
@@ -1249,7 +1261,9 @@ namespace ThanhDV.Utilities
 			var farPlane = new Plane(-direction, position + _forward);
 			var distRay = new Ray(position, slerpedVector);
 
-			farPlane.Raycast(distRay, out dist);
+			// Bail out if the ray doesn't hit the far plane (ray parallel to plane / degenerate cone).
+			// Otherwise `dist` stays at 0 and we'd draw zero-length rays + a zero-radius circle.
+			if (!farPlane.Raycast(distRay, out dist)) return;
 
 			Color oldColor = Gizmos.color;
 			Gizmos.color = color;
@@ -1259,8 +1273,8 @@ namespace ThanhDV.Utilities
 			Gizmos.DrawRay(position, Vector3.Slerp(_forward, _right, angle / 90.0f).normalized * dist);
 			Gizmos.DrawRay(position, Vector3.Slerp(_forward, -_right, angle / 90.0f).normalized * dist);
 
-			DebugExt.DrawCircle(position + _forward, direction, color, (_forward - (slerpedVector.normalized * dist)).magnitude);
-			DebugExt.DrawCircle(position + (_forward * 0.5f), direction, color, ((_forward * 0.5f) - (slerpedVector.normalized * (dist * 0.5f))).magnitude);
+			DrawCircle(position + _forward, direction, color, (_forward - (slerpedVector.normalized * dist)).magnitude);
+			DrawCircle(position + (_forward * 0.5f), direction, color, ((_forward * 0.5f) - (slerpedVector.normalized * (dist * 0.5f))).magnitude);
 
 			Gizmos.color = oldColor;
 #endif
@@ -1333,7 +1347,7 @@ namespace ThanhDV.Utilities
 			Gizmos.color = color;
 
 			Gizmos.DrawRay(position, direction);
-			DebugExt.DrawCone(position + direction, -direction * 0.333f, color, 15);
+			DrawCone(position + direction, -direction * 0.333f, color, 15);
 
 			Gizmos.color = oldColor;
 #endif
@@ -1386,8 +1400,8 @@ namespace ThanhDV.Utilities
 			end = middle + ((end - middle).normalized * sideLength);
 
 			//Radial circles
-			DebugExt.DrawCircle(start, up, color, radius);
-			DebugExt.DrawCircle(end, -up, color, radius);
+			DrawCircle(start, up, color, radius);
+			DrawCircle(end, -up, color, radius);
 
 			//Side lines
 			Gizmos.DrawLine(start + right, end + right);
@@ -1450,6 +1464,8 @@ namespace ThanhDV.Utilities
 		/// </param>
 		public static string MethodsOfObject(System.Object obj, bool includeInfo = false)
 		{
+			if (obj == null) throw new System.ArgumentNullException(nameof(obj));
+
 			string methods = "";
 			MethodInfo[] methodInfos = obj.GetType().GetMethods();
 			for (int i = 0; i < methodInfos.Length; i++)
@@ -1482,6 +1498,8 @@ namespace ThanhDV.Utilities
 		/// </param>
 		public static string MethodsOfType(System.Type type, bool includeInfo = false)
 		{
+			if (type == null) throw new System.ArgumentNullException(nameof(type));
+
 			string methods = "";
 			MethodInfo[] methodInfos = type.GetMethods();
 			for (var i = 0; i < methodInfos.Length; i++)

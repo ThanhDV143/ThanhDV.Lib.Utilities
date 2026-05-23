@@ -1,38 +1,90 @@
 # RectTransform Extensions
 
-Utility extension methods for Unity `RectTransform` to quickly set Anchors, Pivot and Offsets with clear, chainable calls.
+Utility extension methods for Unity `RectTransform` to quickly set anchors, pivot, and offsets via concise calls.
 
 ## How to use
 
 1. Add the namespace: `using ThanhDV.Utilities;`
-2. Call the extension methods on any `RectTransform`:
-   - `SetAnchor(minX, minY, maxX, maxY)`
-   - `SetPivot(x, y)`
-   - `SetOffset(left, right, top, bottom)`
-3. All methods return the same `RectTransform` so you can chain them.
+2. Call the extension methods on any `RectTransform`.
+
+## API
+
+### Anchors
+
+```csharp
+public static void SetAnchor(
+    this RectTransform source,
+    AnchorPresets align,
+    int? offsetX = null,
+    int? offsetY = null);
+```
+
+- `align` — one of the `AnchorPresets` enum values (see below).
+- `offsetX`, `offsetY` — optional new `anchoredPosition.x` / `.y`. When omitted (`null`), the current `anchoredPosition` component is preserved.
+
+**`AnchorPresets` values:**
+
+| Group | Values |
+|---|---|
+| Corner | `TopLeft`, `TopCenter`, `TopRight`, `MiddleLeft`, `MiddleCenter`, `MiddleRight`, `BottomLeft`, `BottomCenter`, `BottomRight` |
+| Horizontal stretch | `HorStretchTop`, `HorStretchMiddle`, `HorStretchBottom` |
+| Vertical stretch | `VertStretchLeft`, `VertStretchCenter`, `VertStretchRight` |
+| Full | `StretchAll` |
+
+### Pivot
+
+```csharp
+public static void SetPivot(this RectTransform source, PivotPresets preset);
+```
+
+**`PivotPresets` values:**
+
+`TopLeft`, `TopCenter`, `TopRight`, `MiddleLeft`, `MiddleCenter`, `MiddleRight`, `BottomLeft`, `BottomCenter`, `BottomRight`.
+
+### Offsets
+
+```csharp
+public static void SetOffset(this RectTransform rt, float left, float right, float top, float bottom);
+public static void SetOffsetLeft(this RectTransform rt, float left);
+public static void SetOffsetRight(this RectTransform rt, float right);
+public static void SetOffsetTop(this RectTransform rt, float top);
+public static void SetOffsetBottom(this RectTransform rt, float bottom);
+```
+
+`SetOffset` writes both `offsetMin` and `offsetMax`. The single-side variants modify only one edge.
 
 ## Example
 
 ```csharp
-var rt = panel.GetComponent<RectTransform>();
+using UnityEngine;
+using ThanhDV.Utilities;
 
-rt.SetAnchor(0.5f, 0.5f, 0.5f, 0.5f)
-  .SetPivot(0.5f, 0.5f)
-  .SetOffset(-100f, 100f, 50f, -50f); 
+public class UISetup : MonoBehaviour
+{
+    [SerializeField] private RectTransform panel;
+    [SerializeField] private RectTransform bottomBar;
+    [SerializeField] private RectTransform topBadge;
 
-rt.SetAnchor(0f, 0f, 1f, 0f)
-  .SetPivot(0.5f, 0f)
-  .SetOffset(16f, 16f, 120f, 0f);
+    private void Awake()
+    {
+        // Center the panel — keep its current anchoredPosition
+        panel.SetAnchor(AnchorPresets.MiddleCenter);
+        panel.SetPivot(PivotPresets.MiddleCenter);
 
-rt.SetAnchor(1f, 1f, 1f, 1f)
-  .SetPivot(1f, 1f)
-  .SetOffset(-300f, 0f, 0f, -180f);
+        // Stretch bottomBar across the bottom edge and pad it 16px on each side
+        bottomBar.SetAnchor(AnchorPresets.HorStretchBottom);
+        bottomBar.SetPivot(PivotPresets.BottomCenter);
+        bottomBar.SetOffset(left: 16f, right: 16f, top: 120f, bottom: 0f);
 
-rt.SetAnchor(0f, 0f, 1f, 1f)
-  .SetPivot(0.5f, 0.5f)
-  .SetOffset(32f, 32f, 64f, 64f);
-
-rt.SetAnchor(0.5f, 1f, 0.5f, 1f)
-  .SetPivot(0.5f, 1f)
-  .SetOffset(-200f, 200f, 0f, -120f);
+        // Pin a badge to the top-right with a 12px,12px offset
+        topBadge.SetAnchor(AnchorPresets.TopRight, offsetX: -12, offsetY: -12);
+        topBadge.SetPivot(PivotPresets.TopRight);
+    }
+}
 ```
+
+## Notes
+
+- `SetAnchor` and `SetPivot` return `void` — they don't chain. Call them on consecutive lines.
+- Omit `offsetX` / `offsetY` to preserve the existing `anchoredPosition` instead of zeroing it.
+- `SetOffset(left, right, top, bottom)` follows Unity's convention where `offsetMax` stores **negated** right/top values internally; the method does the negation for you.
