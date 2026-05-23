@@ -22,9 +22,9 @@
     "dependencies": {},
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ThanhDV143/ThanhDV.Utilities.git"
+        "url": "git+https://github.com/ThanhDV143/ThanhDV.Lib.Utilities.git"
     },
-    "changelogUrl": "https://github.com/ThanhDV143/ThanhDV.Utilities/blob/main/Assets/CustomPackages/Utilities/CHANGELOG.md",
+    "changelogUrl": "https://github.com/ThanhDV143/ThanhDV.Lib.Utilities/blob/main/Assets/CustomPackages/Utilities/CHANGELOG.md",
     "license": "MIT",
     "publishConfig": {
         "registry": "https://upm.thanhdv.com/"
