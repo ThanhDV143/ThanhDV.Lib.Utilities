@@ -1,5 +1,5 @@
 {
-    "name": "ThanhDV.Utilities.EventDispatcher",
+    "name": "ThanhDV.Utilities.EventBus",
     "rootNamespace": "ThanhDV.Utilities",
     "references": [],
     "includePlatforms": [],

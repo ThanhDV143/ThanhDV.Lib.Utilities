@@ -5,14 +5,24 @@ using UnityEngine;
 
 namespace ThanhDV.Utilities
 {
-    public class EventDispatcher
+    public interface IEventBus
     {
-#if !INJECTION_ENABLED
-        #region Singleton 
-        private static EventDispatcher _instance;
+        void Register<T>(Action<T> delegator);
+        void Unregister<T>(Action<T> delegator);
+        void Post<T>(T eventData);
+
+        void Register<T>(Action delegator);
+        void Unregister<T>(Action delegator);
+        void Post<T>();
+    }
+
+    public class EventBus : IEventBus
+    {
+        #region Singleton
+        private static EventBus _instance;
         private static readonly object _lock = new();
 
-        public static EventDispatcher Instance
+        public static EventBus Instance
         {
             get
             {
@@ -20,18 +30,17 @@ namespace ThanhDV.Utilities
                 {
                     if (_instance == null)
                     {
-                        _instance = new EventDispatcher();
+                        _instance = new EventBus();
 
-                        Debug.Log($"<color=yellow>[EventDispatcher] {_instance.GetType().Name} instance is null!!! Auto create new instance!!!</color>");
+                        Debug.Log($"<color=yellow>[EventBus] {_instance.GetType().Name} instance is null!!! Auto create new instance!!!</color>");
                     }
                     return _instance;
                 }
             }
         }
 
-        public static bool IsExist => _instance != null;
+        public static bool Exists => _instance != null;
         #endregion
-#endif
 
         // Cache key with event has no data
         private static readonly ConcurrentDictionary<Type, string> _noDataKeys = new ConcurrentDictionary<Type, string>();

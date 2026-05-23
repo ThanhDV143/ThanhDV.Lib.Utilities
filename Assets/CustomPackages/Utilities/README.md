@@ -3,7 +3,7 @@ This library contains several reusable utilities for Unity development.
 - Main features:
   - Singleton: Derive from the generic base to get a safe global instance.
   - SceneSwitcher: Switch scenes with one click.
-  - EventDispatcher: Type-safe publish / subscribe without string keys.
+  - EventBus: Type-safe publish / subscribe without string keys.
   - RectTransform Extensions: Quick anchoring, positioning, sizing helpers.
   - UIAdaptation: Auto sizing and responsive adjustments.
   - DebugExtensions: Visual debug helpers.

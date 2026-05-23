@@ -5,7 +5,7 @@ This library contain:
 - UIAdaptation
 - RectTransform Extension.
 - DebugExtension
-- EventDispatcher
+- EventBus
 - More utilites in the future.
 
 ## Installation
