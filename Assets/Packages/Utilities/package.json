@@ -1,13 +1,12 @@
 {
     "name": "thanhdv.utilities",
-    "version": "1.5.0",
-    "displayName": "ThanhDV.Utilities",
-    "description": "This library contains some utilities for Unity development.",
+    "version": "1.0.0",
+    "displayName": "Utilities",
+    "description": "A lightweight collection of utilities that simplify common Unity development tasks.",
     "unity": "2022.3",
     "keywords": [
         "Utilities",
         "Singleton",
-        "Observer",
         "EventBus",
         "RectTransform",
         "DebugExtension",

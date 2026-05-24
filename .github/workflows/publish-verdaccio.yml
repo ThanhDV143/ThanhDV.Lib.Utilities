@@ -1,4 +1,4 @@
-name: Publish ThanhDV.Newtonsoft.Json to Verdaccio
+name: Publish ThanhDV.Utilities to Verdaccio
 
 # Triggered when a Git Tag matching v* is pushed
 on:
@@ -13,7 +13,7 @@ jobs:
     # Set the default working directory to the Unity Tool package.json location
     defaults:
       run:
-        working-directory: Assets/CustomPackages/Utilities # <<<<<<< TODO: CHANGE FOR EACH PROJECT
+        working-directory: Assets/Packages/Utilities # <<<<<<< TODO: CHANGE FOR EACH PROJECT
 
     steps:
       # Step 1: Checkout the source code at the pushed tag
