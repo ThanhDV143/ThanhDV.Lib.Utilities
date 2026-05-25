@@ -93,7 +93,7 @@ namespace ThanhDV.Utilities
             }
         }
 
-        public static bool Exists => _instance != null;
+        public static bool Exists => !MonoSingletonRuntime.IsQuitting && _instance != null;
 
         protected virtual void Awake()
         {
@@ -147,7 +147,7 @@ namespace ThanhDV.Utilities
             }
         }
 
-        public static bool Exists => _instance != null;
+        public static bool Exists => !MonoSingletonRuntime.IsQuitting && _instance != null;
 
         protected virtual void Awake()
         {
