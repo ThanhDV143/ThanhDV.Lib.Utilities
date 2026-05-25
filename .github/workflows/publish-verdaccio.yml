@@ -1,4 +1,4 @@
-name: Publish ThanhDV.Utilities to Verdaccio
+name: Publish Utilities to Verdaccio
 
 # Triggered when a Git Tag matching v* is pushed
 on:
