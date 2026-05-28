@@ -69,7 +69,7 @@ namespace ThanhDV.Utilities
 
             void OnRelease()
             {
-                ReleaseHandle(self, isScene);
+                if (self.IsValid()) ReleaseHandle(self, isScene);
                 releaseEvent.Dispatched -= OnRelease;
             }
 
