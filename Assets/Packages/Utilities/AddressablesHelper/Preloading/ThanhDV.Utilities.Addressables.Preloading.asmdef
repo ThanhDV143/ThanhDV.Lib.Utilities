@@ -1,0 +1,37 @@
+{
+	"name": "ThanhDV.Utilities.Addressables.Preloading",
+	"rootNamespace": "ThanhDV.Utilities",
+	"references": [
+		"ThanhDV.Utilities.Addressables.LifetimeBinding",
+		"Unity.Addressables",
+		"Unity.ResourceManager",
+		"UniTask"
+	],
+	"includePlatforms": [],
+	"excludePlatforms": [],
+	"allowUnsafeCode": false,
+	"overrideReferences": false,
+	"precompiledReferences": [],
+	"autoReferenced": true,
+	"defineConstraints": [
+		"ADDRESSABLES_AVAILABLE"
+	],
+	"versionDefines": [
+		{
+			"name": "com.unity.addressables",
+			"expression": "1.0.0",
+			"define": "ADDRESSABLES_AVAILABLE"
+		},
+		{
+			"name": "com.cysharp.unitask",
+			"expression": "2.0.0",
+			"define": "UNITASK_AVAILABLE"
+		},
+		{
+			"name": "thanhdv.fork.cysharp.unitask",
+			"expression": "2.0.0",
+			"define": "UNITASK_AVAILABLE"
+		}
+	],
+	"noEngineReferences": false
+}

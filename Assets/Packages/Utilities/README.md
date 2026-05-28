@@ -8,6 +8,7 @@ This library contains several reusable utilities for Unity development.
   - UIAdaptation: Auto sizing and responsive adjustments.
   - DebugExtensions: Visual debug helpers.
   - WeightedRandomList<T>: Random selection based on weights.
+  - AddressablesHelper: Lightweight memory management add-on for Unity's Addressable Asset System.
 
 ## Installation
 ### Unity Package Manager
