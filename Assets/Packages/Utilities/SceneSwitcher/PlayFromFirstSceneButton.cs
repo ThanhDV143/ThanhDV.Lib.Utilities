@@ -23,13 +23,15 @@ namespace ThanhDV.Utilities
 
         private const string PLAY_ICON_NAME = "PlayButton";
         private const string STOP_ICON_NAME = "PreMatQuad";
+        private const string SESSION_KEY_PREV_SCENES = "SceneSwitcher_PrevScenes";
+        private const string SESSION_KEY_ACTIVE_SCENE = "SceneSwitcher_ActiveScenePath";
 
         private static EditorToolbarButton s_button;
 
         static PlayFromFirstSceneButton()
         {
             EditorApplication.update += Tick;
-            EditorApplication.playModeStateChanged += _ => UpdateVisual();
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
         private static void Tick()
@@ -148,8 +150,45 @@ namespace ThanhDV.Utilities
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            EditorSceneManager.OpenScene(firstScene.path);
+            var openCount = EditorSceneManager.sceneCount;
+            var prev = new string[openCount];
+            for (var i = 0; i < openCount; i++) prev[i] = EditorSceneManager.GetSceneAt(i).path;
+            var activePath = EditorSceneManager.GetActiveScene().path;
+
+            SessionState.SetString(SESSION_KEY_PREV_SCENES, string.Join("|", prev));
+            SessionState.SetString(SESSION_KEY_ACTIVE_SCENE, activePath);
+
+            EditorSceneManager.OpenScene(firstScene.path, OpenSceneMode.Single);
             EditorApplication.isPlaying = true;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            UpdateVisual();
+
+            if (state != PlayModeStateChange.EnteredEditMode) return;
+
+            var joined = SessionState.GetString(SESSION_KEY_PREV_SCENES, string.Empty);
+            if (string.IsNullOrEmpty(joined)) return;
+
+            var activePath = SessionState.GetString(SESSION_KEY_ACTIVE_SCENE, string.Empty);
+            SessionState.EraseString(SESSION_KEY_PREV_SCENES);
+            SessionState.EraseString(SESSION_KEY_ACTIVE_SCENE);
+
+            var paths = joined.Split('|');
+            for (var i = 0; i < paths.Length; i++)
+            {
+                if (string.IsNullOrEmpty(paths[i])) continue;
+                var mode = i == 0 ? OpenSceneMode.Single : OpenSceneMode.Additive;
+                EditorSceneManager.OpenScene(paths[i], mode);
+            }
+
+            if (string.IsNullOrEmpty(activePath)) return;
+            for (var i = 0; i < EditorSceneManager.sceneCount; i++)
+            {
+                var s = EditorSceneManager.GetSceneAt(i);
+                if (s.path == activePath) { EditorSceneManager.SetActiveScene(s); break; }
+            }
         }
     }
 }
